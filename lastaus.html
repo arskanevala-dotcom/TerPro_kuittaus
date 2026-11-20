@@ -1,0 +1,308 @@
+<!doctype html>
+<html lang="fi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Kuorman lastaus – Linna Steel</title>
+<style>
+  :root {
+    --tumma: #2B3047; --keski: #565D7A; --vaalea: #A3B8C2;
+    --tausta: #F3F5F8; --kortti: #FFFFFF; --teksti: #1E2233; --heikko: #5B6275;
+    --ok: #15803D; --ok-tausta: #DCFCE7; --virhe: #B91C1C; --virhe-tausta: #FEE2E2;
+    --varo: #92400E; --varo-tausta: #FEF3C7; --viiva: #DDE3EA; --sini: #1D4ED8;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; background: var(--tausta); color: var(--teksti); font-size: 17px; line-height: 1.45; }
+  header { background: var(--tumma); color: #fff; padding: 14px 16px; display: flex; align-items: center; gap: 12px; }
+  header img { height: 34px; }
+  header .nimi { font-weight: 700; letter-spacing: .06em; }
+  header .ala { font-size: 13px; color: var(--vaalea); }
+  main { max-width: 560px; margin: 0 auto; padding: 16px; }
+  .kortti { background: var(--kortti); border: 1px solid var(--viiva); border-radius: 12px; padding: 16px; margin-bottom: 14px; }
+  h1 { font-size: 22px; margin: 0 0 4px; }
+  h2 { font-size: 18px; margin: 0 0 6px; }
+  .en { color: var(--heikko); font-size: 14px; }
+  .iso { font-size: 28px; font-weight: 800; }
+  table { width: 100%; border-collapse: collapse; font-size: 15px; margin-top: 8px; }
+  td { padding: 8px 4px; border-top: 1px solid var(--viiva); vertical-align: top; }
+  td.oik { text-align: right; white-space: nowrap; color: var(--heikko); }
+  td.pois { width: 44px; text-align: right; }
+  td.pois button { width: 38px; height: 38px; margin: 0; padding: 0; font-size: 18px; background: #E5E7EB; color: var(--teksti); }
+  .merkit { color: var(--heikko); font-size: 14px; }
+  label { display: block; font-weight: 600; margin: 14px 0 6px; }
+  input[type=text] { width: 100%; font: inherit; padding: 12px; border: 1px solid #B8C1CC; border-radius: 8px; background: #fff; color: var(--teksti); }
+  button { width: 100%; margin-top: 16px; padding: 16px; font: inherit; font-weight: 700; font-size: 19px; color: #fff; background: var(--ok); border: 0; border-radius: 10px; }
+  button.toissij { background: #fff; color: var(--keski); border: 1px solid #B8C1CC; font-size: 16px; padding: 12px; }
+  button:disabled { opacity: .55; }
+  a.nappi { display: block; text-align: center; text-decoration: none; margin-top: 16px; padding: 16px; font-weight: 700; font-size: 19px; color: #fff; background: var(--sini); border-radius: 10px; }
+  .ilmoitus { border-radius: 12px; padding: 16px; margin-bottom: 14px; }
+  .ilmoitus.ok { background: var(--ok-tausta); color: var(--ok); }
+  .ilmoitus.virhe { background: var(--virhe-tausta); color: var(--virhe); }
+  .ilmoitus.varo { background: var(--varo-tausta); color: var(--varo); }
+  .ilmoitus b { display: block; font-size: 20px; margin-bottom: 4px; }
+  .yht { display: flex; justify-content: space-between; font-weight: 700; margin-top: 10px; }
+  .piilo { display: none; }
+  footer { text-align: center; color: var(--heikko); font-size: 13px; padding: 8px 16px 28px; }
+</style>
+</head>
+<body>
+<header>
+  <img src="TerPro_logo.png" alt="" onerror="this.remove()">
+  <div><div class="nimi">LINNA STEEL</div><div class="ala">Kuorman lastaus · Loading</div></div>
+</header>
+
+<main>
+  <div id="viesti" class="ilmoitus piilo"></div>
+  <div id="lataa" class="kortti">Haetaan… <span class="en">Loading…</span></div>
+
+  <!-- Ohje, kun sivu avataan ilman nipputarraa -->
+  <div id="ohje" class="kortti piilo">
+    <h1>Skannaa nipputarra</h1>
+    <div>Avaa puhelimen kamera ja osoita nipun tarran QR-koodia. Jokainen skannattu nippu lisätään kuormaasi.</div>
+    <div class="en">Scan the QR code on each bundle label with the phone camera.</div>
+  </div>
+
+  <!-- Lastatun nipun tarra skannattu uudelleen (esim. perillä) -->
+  <section id="perillaKortti" class="kortti piilo">
+    <h1 id="pkOtsikko">Kuormakirja</h1>
+    <div id="pkKohde" class="en"></div>
+    <div style="margin-top:10px">Nippu on lastattu tähän kuormaan. Kun olet perillä, kuittaa koko kuorma toimitetuksi:</div>
+    <div class="en">This bundle is loaded. On arrival, confirm the delivery of the whole load:</div>
+    <a id="pkLinkki" class="nappi" href="#">Kuittaa kuorma perille</a>
+  </section>
+
+  <!-- Uusi kuorma: kuljettajan tiedot (muistetaan puhelimessa) -->
+  <section id="aloitus" class="kortti piilo">
+    <h1>Uusi kuorma</h1>
+    <div class="en">New load</div>
+    <label for="nimi">Nimesi <span class="en">/ Your name</span></label>
+    <input id="nimi" type="text" autocomplete="name" maxlength="80">
+    <label for="liike">Kuljetusliike <span class="en">/ Haulier</span></label>
+    <input id="liike" type="text" autocomplete="organization" maxlength="80">
+    <button id="btnAloita">Aloita kuorma ja lisää nippu</button>
+  </section>
+
+  <!-- Kuorma -->
+  <section id="kuorma" class="piilo">
+    <div class="kortti">
+      <h1 id="kOtsikko">Kuorma</h1>
+      <div id="kKohde" class="en"></div>
+      <table><tbody id="niput"></tbody></table>
+      <div class="yht"><span id="yhtNiput"></span><span id="yhtKg"></span></div>
+      <div id="eiValmis">
+        <div class="en" style="margin-top:10px">Skannaa seuraava nipputarra kameralla – se lisätään tähän kuormaan.</div>
+        <button id="btnValmis">✔ Kuorma valmis – lähden</button>
+      </div>
+    </div>
+    <div id="valmisKortti" class="kortti piilo">
+      <h2>Perillä</h2>
+      <div>Kun olet perillä, kuittaa kuorma toimitetuksi:</div>
+      <div class="en" style="margin-top:6px">Jos suljet sivun: skannaa perillä mikä tahansa kuorman nipputarra uudelleen, niin pääset kuittaamaan.</div>
+      <a id="perillaLinkki" class="nappi" href="#">Kuittaa kuorma perille</a>
+      <button id="btnUusi" class="toissij">Aloita uusi kuorma</button>
+    </div>
+  </section>
+</main>
+<footer>Linna Steel · Lastaus tallentuu Linna Steelin tuotannonohjaukseen (TerPro).</footer>
+
+<script>
+(() => {
+  // ── ASETUKSET: samat kuin index.html:n TerPro-kohdassa ───────────────────
+  const SUPABASE_URL = "https://qabyammufwutaikbftqg.supabase.co";
+  const ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFhYnlhbW11Znd1dGFpa2JmdHFnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTM0MzM3MzUsImV4cCI6MjEwOTAwOTczNX0.8LQ58sjXpAJI6gY5qzXS98GkBd4dsccZlrIzFJiMif8";
+  // ─────────────────────────────────────────────────────────────────────────
+
+  const $ = id => document.getElementById(id);
+  const parametrit = new URLSearchParams(location.search);
+  const nippu = parametrit.get("n") || "";
+
+  function siistiUrl(u) {
+    u = String(u || "").trim().replace(/[“”"'\s]/g, "");
+    const dash = u.match(/supabase\.com\/dashboard\/project\/([a-z0-9]+)/i);
+    if (dash) return `https://${dash[1]}.supabase.co`;
+    if (/^[a-z0-9]{15,30}$/i.test(u)) return `https://${u}.supabase.co`;
+    if (!/^https?:\/\//i.test(u)) u = "https://" + u;
+    return u.replace(/^http:/i, "https:").replace(/\/(rest|auth)\/v1.*$/i, "").replace(/\/+$/, "");
+  }
+  const BASE = siistiUrl(SUPABASE_URL);
+  const KEY = ANON_KEY.trim();
+
+  async function rpc(nimi, data) {
+    if (!/^https:\/\/[a-z0-9-]+(\.[a-z0-9-]+)+$/i.test(BASE) || /XXXX/.test(BASE))
+      throw new Error(`lastaus.html: SUPABASE_URL on väärän muotoinen: "${SUPABASE_URL}".`);
+    if (!(KEY.startsWith("eyJ") || KEY.startsWith("sb_publishable_")))
+      throw new Error("lastaus.html: ANON_KEY puuttuu tai ei ole julkinen avain.");
+    const headers = { "apikey": KEY, "Content-Type": "application/json" };
+    if (KEY.startsWith("eyJ")) headers["Authorization"] = `Bearer ${KEY}`;
+    const r = await fetch(`${BASE}/rest/v1/rpc/${nimi}`, { method: "POST", headers, body: JSON.stringify(data) });
+    const txt = await r.text();
+    const json = txt ? JSON.parse(txt) : null;
+    if (!r.ok) throw new Error((json && (json.message || json.hint)) || `Virhe ${r.status}`);
+    return json;
+  }
+
+  // Puhelin muistaa kuorman ja kuljettajan (ei välttämätön – virheet ohitetaan)
+  const muisti = {
+    lue(k) { try { return localStorage.getItem("terpro_" + k) || ""; } catch { return ""; } },
+    kirjoita(k, v) { try { v ? localStorage.setItem("terpro_" + k, v) : localStorage.removeItem("terpro_" + k); } catch {} }
+  };
+
+  function nayta(tyyppi, otsikko, teksti) {
+    const v = $("viesti");
+    v.className = `ilmoitus ${tyyppi}`;
+    v.innerHTML = "";
+    const b = document.createElement("b"); b.textContent = otsikko; v.appendChild(b);
+    if (teksti) { const d = document.createElement("div"); d.textContent = teksti; v.appendChild(d); }
+  }
+  const piilota = (...idt) => idt.forEach(i => $(i).classList.add("piilo"));
+  const naytaOsa = (...idt) => idt.forEach(i => $(i).classList.remove("piilo"));
+  const kg = n => `${Math.round(Number(n) || 0).toLocaleString("fi-FI")} kg`;
+
+  function piirraKuorma(d) {
+    piilota("lataa", "ohje", "aloitus");
+    naytaOsa("kuorma");
+    $("kOtsikko").textContent = d.knro ? `Kuormakirja ${d.knro}` : "Kuorma (kesken)";
+    $("kKohde").textContent = [`Projekti ${d.projekti}`, d.kohde, d.kuljettaja].filter(Boolean).join(" · ");
+    const tb = $("niput"); tb.innerHTML = "";
+    let kpl = 0, paino = 0, maalaamatta = 0;
+    for (const n of d.niput || []) {
+      kpl += n.kpl; paino += Number(n.paino) || 0; maalaamatta += n.maalaamatta || 0;
+      const tr = document.createElement("tr");
+      const td1 = document.createElement("td");
+      const b = document.createElement("b"); b.textContent = `Nippu ${n.nippu}`; td1.appendChild(b);
+      const m = document.createElement("div"); m.className = "merkit";
+      m.textContent = (n.merkit || []).map(x => `${x.merkki} × ${x.kpl}`).join(", ");
+      td1.appendChild(m);
+      const td2 = document.createElement("td"); td2.className = "oik"; td2.textContent = `${n.kpl} kpl · ${kg(n.paino)}`;
+      tr.append(td1, td2);
+      if (!d.valmis) {
+        const td3 = document.createElement("td"); td3.className = "pois";
+        const btn = document.createElement("button"); btn.textContent = "✕"; btn.title = "Poista kuormasta";
+        btn.onclick = async () => {
+          if (!confirm(`Poistetaanko nippu ${n.nippu} kuormasta?`)) return;
+          try { piirraKuorma(await rpc("lastaus_poista", { p_kuorma: d.kuorma, p_nippu_id: n.id })); }
+          catch (e) { nayta("virhe", "Poisto ei onnistunut", e.message); }
+        };
+        td3.appendChild(btn); tr.appendChild(td3);
+      }
+      tb.appendChild(tr);
+    }
+    $("yhtNiput").textContent = `${(d.niput || []).length} nippua · ${kpl} kpl`;
+    $("yhtKg").textContent = kg(paino);
+    if (maalaamatta > 0 && !d.valmis)
+      nayta("varo", "Huomio: maalaamattomia kappaleita", `${maalaamatta} kpl ei ole kuitattu maalatuksi. Tarkista nippu.`);
+
+    if (d.valmis) {
+      piilota("eiValmis");
+      naytaOsa("valmisKortti");
+      $("perillaLinkki").href = `index.html?t=${encodeURIComponent(d.kuittaus || "")}`;
+      if (d.perilla) $("perillaLinkki").textContent = "Kuorma on kuitattu perille ✓";
+      muisti.kirjoita("kuorma", "");                 // seuraava skannaus aloittaa uuden kuorman
+      muisti.kirjoita("viimeisin", d.kuorma);         // perillä-linkki löytyy vielä myöhemmin
+    } else {
+      naytaOsa("eiValmis");
+      piilota("valmisKortti");
+      $("btnValmis").disabled = !(d.niput || []).length;
+      muisti.kirjoita("kuorma", d.kuorma);
+    }
+  }
+
+  async function lisaaNippu(uusi) {
+    const kuorma = uusi ? null : (muisti.lue("kuorma") || null);
+    const d = await rpc("lastaus_lisaa", {
+      p_kuorma: kuorma, p_nippu: nippu,
+      p_kuljettaja: $("nimi").value.trim() || muisti.lue("nimi"),
+      p_kuljetusliike: $("liike").value.trim() || muisti.lue("liike")
+    });
+    history.replaceState(null, "", location.pathname);   // päivitys ei lisää nippua uudelleen
+    const lisatty = (d.niput || []).slice(-1)[0];   // viimeksi lisätty
+    piirraKuorma(d);
+    if (lisatty) nayta("ok", `Nippu ${lisatty.nippu} lisätty ✓`, `${lisatty.kpl} kpl · ${kg(lisatty.paino)}`);
+  }
+
+  $("btnAloita").onclick = async () => {
+    const nimi = $("nimi").value.trim();
+    if (!nimi) { nayta("virhe", "Kirjoita nimesi", "Name is required."); return; }
+    muisti.kirjoita("nimi", nimi);
+    muisti.kirjoita("liike", $("liike").value.trim());
+    $("btnAloita").disabled = true;
+    try { await lisaaNippu(true); }
+    catch (e) { nayta("virhe", "Lisäys ei onnistunut", e.message); }
+    finally { $("btnAloita").disabled = false; }
+  };
+
+  $("btnValmis").onclick = async () => {
+    if (!confirm("Merkitäänkö kuorma valmiiksi? Kuormakirja muodostetaan ja kappaleet merkitään lastatuiksi.")) return;
+    $("btnValmis").disabled = true;
+    try {
+      const d = await rpc("lastaus_valmis", { p_kuorma: muisti.lue("kuorma") });
+      piirraKuorma(d);
+      nayta("ok", `Kuormakirja ${d.knro} valmis ✓`, "Hyvää matkaa! Kuittaa perillä alla olevalla napilla. / Confirm delivery on arrival.");
+    } catch (e) {
+      nayta("virhe", "Ei onnistunut", e.message);
+      $("btnValmis").disabled = false;
+    }
+  };
+
+  $("btnUusi").onclick = () => {
+    muisti.kirjoita("kuorma", ""); muisti.kirjoita("viimeisin", "");
+    piilota("kuorma", "viesti"); naytaOsa("ohje");
+  };
+
+  (async () => {
+    $("nimi").value = muisti.lue("nimi");
+    $("liike").value = muisti.lue("liike");
+    try {
+      if (nippu) {
+        const n = await rpc("lastaus_nippu", { p_nippu: nippu });
+        if (n.knro) {
+          // Lastattu nippu: perillä skannattu tarra avaa kuorman perillä-kuittauksen
+          piilota("lataa");
+          if (n.kuittaus) {
+            naytaOsa("perillaKortti");
+            $("pkOtsikko").textContent = `Kuormakirja ${n.knro}`;
+            $("pkKohde").textContent = [`Nippu ${n.nippu}`, n.kohde].filter(Boolean).join(" · ");
+            $("pkLinkki").href = `index.html?t=${encodeURIComponent(n.kuittaus)}`;
+            if (n.perilla) {
+              $("pkLinkki").textContent = "Kuorma on jo kuitattu perille ✓";
+              nayta("ok", "Kuorma on jo kuitattu perille", "Delivery already confirmed.");
+            }
+          } else {
+            naytaOsa("ohje");
+            nayta("varo", `Nippu ${n.nippu} on jo lastattu`, `Kuormakirja ${n.knro}.`);
+          }
+          return;
+        }
+        if (muisti.lue("kuorma")) {
+          try { await lisaaNippu(false); return; }
+          catch (e) {
+            // Eri projekti tms.: näytetään nykyinen kuorma ja virhe
+            const d = await rpc("lastaus_tiedot", { p_kuorma: muisti.lue("kuorma") }).catch(() => null);
+            if (d && !d.valmis) { piirraKuorma(d); nayta("virhe", `Nippua ${n.nippu} ei lisätty`, e.message); return; }
+            muisti.kirjoita("kuorma", "");
+          }
+        }
+        // Ei kuormaa → kuljettajan tiedot ja aloitus
+        piilota("lataa");
+        naytaOsa("aloitus");
+        nayta("ok", `Nippu ${n.nippu}`, `${n.kohde || ""} · ${n.kpl} kpl · ${kg(n.paino)}`);
+        if (n.maalaamatta) nayta("varo", `Nippu ${n.nippu}: ${n.maalaamatta} kpl maalaamatta`, "Tarkista nippu ennen lastausta.");
+        return;
+      }
+      // Ilman tarraa: näytetään keskeneräinen tai viimeisin kuorma
+      const kuorma = muisti.lue("kuorma") || muisti.lue("viimeisin");
+      if (kuorma) {
+        const d = await rpc("lastaus_tiedot", { p_kuorma: kuorma });
+        if (d) { piirraKuorma(d); return; }
+      }
+      piilota("lataa"); naytaOsa("ohje");
+    } catch (e) {
+      piilota("lataa"); naytaOsa("ohje");
+      nayta("virhe", "Virhe", e.message);
+    }
+  })();
+})();
+</script>
+</body>
+</html>
